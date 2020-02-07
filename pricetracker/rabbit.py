@@ -1,11 +1,13 @@
+
 from flask import Flask
 import requests
 import json
 from bs4 import BeautifulSoup
 import smtplib  #simple mail transfer protocol smtp
 import time
-
-URL="https://www.flipkart.com/adnet-laptop-power-cable-1-8m-cord/p/itmeteyhhg7mu2hn?pid=ACCETEYHY6EYDC75&lid=LSTACCETEYHY6EYDC7572QN5W&marketplace=FLIPKART&cmpid=content_data-cable_8965229628_gmc_pla&tgi=sem,1,G,11214002,g,search,,272254313975,1o9,,,m,,mobile,,,,,&ef_id=CjwKCAjwx_boBRA9EiwA4kIELm6pYPSqz0eM80WAmNKH59BRKJu4K2DQa6Ex1-HxGWFfRYlnfFclrRoCFL0QAvD_BwE:G:s&s_kwcid=AL!739!3!272254313975!!!g!328372664096!&gclid=CjwKCAjwx_boBRA9EiwA4kIELm6pYPSqz0eM80WAmNKH59BRKJu4K2DQa6Ex1-HxGWFfRYlnfFclrRoCFL0QAvD_BwE"
+from rq import push_connection, pop_connection
+# from rq.decorators import job
+# URL="https://www.flipkart.com/adnet-laptop-power-cable-1-8m-cord/p/itmeteyhhg7mu2hn?pid=ACCETEYHY6EYDC75&lid=LSTACCETEYHY6EYDC7572QN5W&marketplace=FLIPKART&cmpid=content_data-cable_8965229628_gmc_pla&tgi=sem,1,G,11214002,g,search,,272254313975,1o9,,,m,,mobile,,,,,&ef_id=CjwKCAjwx_boBRA9EiwA4kIELm6pYPSqz0eM80WAmNKH59BRKJu4K2DQa6Ex1-HxGWFfRYlnfFclrRoCFL0QAvD_BwE:G:s&s_kwcid=AL!739!3!272254313975!!!g!328372664096!&gclid=CjwKCAjwx_boBRA9EiwA4kIELm6pYPSqz0eM80WAmNKH59BRKJu4K2DQa6Ex1-HxGWFfRYlnfFclrRoCFL0QAvD_BwE"
 headers={"UserAgent":'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36'}
 '''  In computing, a user agent is software (a software agent) that is acting on behalf of a user, such as a web browser that "retrieves, renders and facilitates end user interaction with Web content". An email reader is a mail user agent '''
 
@@ -27,28 +29,41 @@ def send_mail(url, price, title,email):
 	print('EMAIL SEND')
 	server.quit()
 
-
 def check_price(url,target_price,email):
-    page = requests.get(url,headers = headers)
-    soup=BeautifulSoup(page.content,'html.parser')
-    #print(soup.prettify())
-    title=soup.find("span",{"class":"_35KyD6"}).get_text()
-    price=soup.find("div",{"class":"_1vC4OE _3qQ9m1"}).get_text()
-    data = price.strip()#remove space from sides
-    current_price = float(data[1:])
-    print(current_price)
-    print(title)
-    if current_price <= target_price:
-        send_mail(url,current_price,title,email)
-        return True
-    return False
+	page = requests.get(url,headers = headers)
+	soup=BeautifulSoup(page.content,'html.parser')
+	#print(soup.prettify())
+	title=soup.find("span",{"class":"_35KyD6"}).get_text()
+	price=soup.find("div",{"class":"_1vC4OE _3qQ9m1"}).get_text()
+	data = price.strip()#remove space from sides
+	data = data.replace(',','')
+	current_price = float(data[1:])
+	print("HEY I AM WORKING : \n\n\n\n\n\n")
+	print(title)
+	print('\n\n\n\n\n')
+	if current_price <= target_price:
+	    send_mail(url,current_price,title,email)
+	    return True
+	return False
+# from redis import Redis
+# @job('q1',connection = Redis.from_url('redis://'),timeout = 10000)
 def start(arr):
-    url = arr[0]
-    target_price = arr[1]
-    email = arr[2]
-    arrival_time = arr[3]
-    flag = False
-    while not flag:
-        time.sleep(2)
-        flag = check_price(url,target_price,email) #check price for all request in that interval
-        # interval_user[interval][3] += key
+	url = arr[0]
+	target_price = arr[1]
+	email = arr[2]
+	arrival_time = arr[3]
+	# q = arr[4]
+	flag = False
+	times = 0
+	while not flag:
+		# print(len(q))
+		times = times + 1
+		print(times)
+		try:
+			flag = check_price(url,target_price,email) #check price for all request in that interval
+		except:
+			pass   #if product is removed or site is changed or time out is reached
+		if(flag == -1):
+			flash('Please open tab of product and then copy url','danger')
+		time.sleep(10)
+		# interval_user[interval][3] += key

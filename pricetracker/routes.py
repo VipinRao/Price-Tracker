@@ -14,13 +14,16 @@ from flask_login import login_user, current_user, logout_user, login_required
 from bs4 import BeautifulSoup
 import smtplib  #simple mail transfer protocol smtp
 # from pricetracker.rabbit import start
+headers={"UserAgent":'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36'}
+'''  In computing, a user agent is software (a software agent) that is acting on behalf of a user, such as a web browser that "retrieves, renders and facilitates end user interaction with Web content". An email reader is a mail user agent '''
 
 interval_user = {}     # interval -> user_id
 url_dict = {}
 from redis import Redis
 import rq
-queue = rq.Queue('q1',connection = Redis.from_url('redis://'))
-
+# Redis.connectTimeout(2000000000000)  #5 years approx
+queue = rq.Queue('q1',connection = Redis.from_url('redis://'),default_timeout = 200000000) #approx 6 years
+# q = Queue(connection=Redis(host='localhost', port=6379))
 
 @app.route("/", methods=['GET','POST'])
 @app.route("/home", methods=['GET','POST'])
@@ -34,15 +37,28 @@ def home():
             # interval_user[form.interval] = [time.time()]
         if form.url not in url_dict:
             url_dict[form.url.data] = True
-            print('DATA: \n\n\n\n')
-            print(form.url.data)
-            print(form.target_price.data)
-            print(current_user.email)
-            queue.enqueue('pricetracker.rabbit.start',[form.url.data,form.target_price.data,str(current_user.email),time.time()])
+            # print('DATA: \n\n\n\n')
+            # print(form.url.data)
+            # print(form.target_price.data)
+            # print(current_user.email)
+            try:
+                page = requests.get(form.url.data,headers = headers)
+                soup=BeautifulSoup(page.content,'html.parser')
+            #print(soup.prettify())
+                test1=soup.find("span",{"class":"_35KyD6"})
+                test2=soup.find("div",{"class":"_1vC4OE _3qQ9m1"})
+                if(test1 != None and test2 != None):
+                    queue.enqueue('pricetracker.rabbit.start',[form.url.data,form.target_price.data,str(current_user.email),time.time()])
+                    # queue.dequeue()
+                    flash('{}, your request is successfully registered, you will be recieve email when price has fallen down to target price'.format(current_user.username),'success')
+                else:
+                    flash('Please open product tab in which only your flipkart product is visible then copy url','danger')
+            except  Exception as e:
+                print(e)
+                flash('Please enter valid data','danger')
             # queue.enqueue('pricetracker.rabbit.start',20)
         # interval_user[form.interval].append([form.url, form.target_price, current_user.email, time.time()])
         # print(interval_user)
-        flash('{}, your request is successfully registered, you will be recieve email when price has fallen down to target price'.format(current_user.username),'success')
         return redirect(url_for('home'))
 
     return render_template('home.html',form=form)
