@@ -13,7 +13,7 @@ headers={"UserAgent":'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML,
 
 
 
-def send_mail(url, price, title,email):
+	def send_mail(url, price, title,email):
 	#establish connection cleint -server with gmail
 	server=smtplib.SMTP('smtp.gmail.com',587)
 	server.ehlo()
@@ -21,7 +21,6 @@ def send_mail(url, price, title,email):
 	server.starttls()
 	'''STARTTLS. STARTTLS is a command over an in clear () connection that asks to sever to upgrade the connection to encrypted () .'''
 	server.ehlo()
-	server.login('vipinyadav1041998@gmail.com','mgymaiktjrzwuizy')
 	subject="Required price has reached!!"
 	body='check link' + url + ' current price = ' + str(price)
 	msg=f"Subject:{subject}\n\n{body}"
@@ -38,9 +37,9 @@ def check_price(url,target_price,email):
 	data = price.strip()#remove space from sides
 	data = data.replace(',','')
 	current_price = float(data[1:])
-	print("HEY I AM WORKING : \n\n\n\n\n\n")
-	print(title)
-	print('\n\n\n\n\n')
+	# print("HEY I AM WORKING : \n\n\n\n\n\n")
+	# print(title)
+	# print('\n\n\n\n\n')
 	if current_price <= target_price:
 	    send_mail(url,current_price,title,email)
 	    return True
@@ -65,5 +64,5 @@ def start(arr):
 			pass   #if product is removed or site is changed or time out is reached
 		if(flag == -1):
 			flash('Please open tab of product and then copy url','danger')
-		time.sleep(10)
+		time.sleep(30*60)
 		# interval_user[interval][3] += key

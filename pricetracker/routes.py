@@ -25,6 +25,9 @@ import rq
 queue = rq.Queue('q1',connection = Redis.from_url('redis://'),default_timeout = 200000000) #approx 6 years
 # q = Queue(connection=Redis(host='localhost', port=6379))
 
+# Start a worker with a custom name
+worker = rq.Worker([queue], connection=Redis.from_url('redis://'), name='w1')
+
 @app.route("/", methods=['GET','POST'])
 @app.route("/home", methods=['GET','POST'])
 @login_required
