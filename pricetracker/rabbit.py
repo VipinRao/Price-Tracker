@@ -22,7 +22,7 @@ def send_mail(url, price, title,email):
 	server.starttls()
 	'''STARTTLS. STARTTLS is a command over an in clear () connection that asks to sever to upgrade the connection to encrypted () .'''
 	server.ehlo()
-	server.login('lakshay.samarth@gmail.com','iytfmpekmkgixjzn')
+	server.login('test@gmail.com','#put your secret key here')
 	subject="Required price has reached!!"
 	body='check link' + url + ' current price = ' + str(price)
 	msg=f"Subject:{subject}\n\n{body}"
